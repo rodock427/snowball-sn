@@ -25,6 +25,7 @@ const norm = t => t.values ? { name: t.name, table: t.table, emoji: '🧊',
 async function run(job, data = null) {
   const target = form ? { tabId: tab.id, frameIds: [form.frameId] } : { tabId: tab.id, allFrames: true };
   const res = await chrome.scripting.executeScript({ target, world: 'MAIN', func: snowball, args: [job, data] });
+  run.frames = res.length; // shown when no form is found, to tell "can't reach the form frame" from "no form"
   return res.find(r => r.result);
 }
 
@@ -245,7 +246,7 @@ $('#import').onchange = async e => {
   if (form) { store.origin = new URL(tab.url).origin; save(); }
   $('#ctx-title').textContent = form ? form.number || `New ${form.table}` : 'Snowball';
   $('#ctx-sub').textContent = form ? form.short_description || form.table
-    : why ? `Can't read this page: ${why}` : 'No ticket here — templates will start a new one';
+    : why ? `Can't read this page: ${why}` : `No ticket here (checked ${run.frames} frames) — templates will start a new one`;
   $('#ctx-sub').title = $('#ctx-sub').textContent;
   show('list');
 })();
