@@ -1,0 +1,149 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Snowball</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0d0f14; --row: #171b25; --row-hi: #1e2433; --line: #262c3a;
+    --text: #e8ecf4; --dim: #8a93a6; --ice: #7dd3fc; --violet: #a78bfa;
+    --grad: linear-gradient(135deg, var(--ice), var(--violet));
+    font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { width: 360px; height: 520px; margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; overflow: hidden; }
+  [hidden] { display: none !important; }
+
+  header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line);
+    background: radial-gradient(120% 140% at 0% 0%, #7dd3fc22, transparent 60%), radial-gradient(120% 140% at 100% 0%, #a78bfa1f, transparent 60%); }
+  .logo { width: 32px; height: 32px; image-rendering: pixelated; }
+  .ctx { flex: 1; min-width: 0; }
+  .ctx b { display: block; font-size: 15px; letter-spacing: -.01em; }
+  .ctx small, .row small { display: block; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  main, section { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  section { padding: 12px 14px; overflow: auto; }
+  section > * { flex-shrink: 0; }
+  .search { padding: 12px 12px 4px; }
+  #list { flex: 1; overflow: auto; padding: 0 12px 8px; }
+
+  input:not([type]), textarea { width: 100%; background: var(--row); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font: inherit; outline: none; transition: border-color .15s, box-shadow .15s; }
+  input:not([type]):focus, textarea:focus { border-color: var(--ice); box-shadow: 0 0 0 3px #7dd3fc26; }
+  textarea { height: 96px; resize: vertical; }
+
+  h5 { margin: 14px 4px 6px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; margin-bottom: 6px; border-radius: 10px; background: var(--row);
+    border: 1px solid transparent; cursor: pointer; animation: slide .25s both; transition: background .12s, border-color .12s, box-shadow .12s; }
+  .row.sel { background: var(--row-hi); border-color: #7dd3fc80; box-shadow: 0 6px 20px -10px var(--ice); }
+  .row.off { opacity: .45; }
+  .emo { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 8px; background: var(--bg); font-size: 16px; }
+  .body { flex: 1; min-width: 0; }
+  .body b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag { font-size: 10px; color: var(--violet); margin-left: 4px; font-weight: 500; }
+  .row .icon { opacity: 0; }
+  .row:hover .icon, .row.sel .icon { opacity: 1; }
+  .none { color: var(--dim); text-align: center; margin-top: 30px; }
+
+  button, .btn { font: inherit; font-weight: 600; color: var(--text); background: var(--row); border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; cursor: pointer; transition: border-color .15s, filter .15s, transform .1s; }
+  button:hover, .btn:hover { border-color: var(--dim); }
+  button:active { transform: scale(.97); }
+  button.primary { background: var(--grad); color: #0b0d12; border: 0; }
+  button.primary:hover { filter: brightness(1.12); }
+  button.icon { background: none; border: 0; color: var(--dim); padding: 4px 7px; border-radius: 6px; }
+  button.icon:hover { color: var(--text); background: var(--line); }
+  button.danger { color: #fca5a5; }
+  .actions { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); }
+  section .actions { padding: 12px 0; border: 0; margin: auto 0 -12px; position: sticky; bottom: -12px; background: var(--bg); }
+  .grow { flex: 1; }
+  .actions > button:not(.icon) { flex: 1; }
+  section .actions > button:not(.icon) { flex: none; }
+
+  .lbl { display: flex; align-items: center; justify-content: space-between; margin: 14px 2px 6px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  .lbl a { color: var(--ice); cursor: pointer; text-transform: none; letter-spacing: 0; font-size: 12px; }
+  .emojis { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .emojis button { width: 34px; height: 34px; padding: 0; font-size: 17px; background: var(--row); }
+  .emojis button.on { border-color: var(--ice); box-shadow: 0 0 0 2px #7dd3fc33; }
+  .seg { display: inline-flex; background: var(--row); border-radius: 8px; padding: 2px; }
+  .seg button { border: 0; background: none; padding: 3px 9px; font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--dim); border-radius: 6px; }
+  .seg button.on { background: var(--grad); color: #0b0d12; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .chips button { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: var(--row-hi); color: var(--ice); border: 0; }
+  .field { display: flex; gap: 10px; align-items: center; padding: 7px 10px; border-radius: 8px; background: var(--row); margin-bottom: 4px; cursor: pointer; }
+  .field input { accent-color: var(--ice); margin: 0; }
+  .field span { flex: 1; min-width: 0; }
+  .field small { display: block; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  h3 { margin: 4px 0 6px; font-size: 14px; }
+  p { margin: 0 0 12px; color: var(--dim); }
+  kbd { font: 11px ui-monospace, monospace; background: var(--row-hi); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; color: var(--text); }
+  .keys { padding: 7px; font-size: 11px; color: var(--dim); text-align: center; border-top: 1px solid var(--line); }
+
+  .empty { text-align: center; padding: 26px 16px; }
+  .empty img { width: 64px; height: 64px; image-rendering: pixelated; animation: float 2.4s ease-in-out infinite; }
+  .empty b { display: block; font-size: 15px; margin: 8px 0 4px; }
+
+  #toast { position: fixed; left: 12px; right: 12px; bottom: 44px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+    background: var(--grad); color: #0b0d12; font-weight: 600; box-shadow: 0 10px 30px -8px #000c; }
+  #toast span { flex: 1; }
+  #toast button { background: #0b0d1226; color: inherit; border: 0; padding: 4px 10px; }
+  #toast.pop { animation: pop .22s ease-out; }
+
+  @keyframes slide { from { opacity: 0; transform: translateY(6px); } }
+  @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.96); } }
+  @keyframes float { 50% { transform: translateY(-5px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+
+<header>
+  <img class="logo" id="logo" src="icons/32.png" alt="">
+  <div class="ctx"><b id="ctx-title">Snowball</b><small id="ctx-sub">Looking for a ticket…</small></div>
+  <button class="icon" id="gear" title="Settings" aria-label="Settings">⚙</button>
+</header>
+
+<main id="list-view">
+  <div class="search"><input id="q" placeholder="Search replies, hand-offs, templates…" autocomplete="off" aria-label="Search"></div>
+  <div id="list"></div>
+  <div class="actions">
+    <button id="new-reply">＋ Reply</button>
+    <button id="save-ticket" class="primary">＋ Save this ticket</button>
+  </div>
+</main>
+
+<section id="edit-view" hidden>
+  <div class="emojis" id="emojis"></div>
+  <input id="e-name" placeholder="Name it… e.g. Password reset" aria-label="Name">
+  <div class="lbl">Message
+    <span class="seg" id="vis"><button data-vis="comments">Customer-visible</button><button data-vis="work_notes">Work note</button></span>
+  </div>
+  <textarea id="e-msg" placeholder="Hi {first_name}, …" aria-label="Message"></textarea>
+  <div class="chips" id="chips"></div>
+  <div id="e-fields-wrap">
+    <div class="lbl">Fields <a id="just-routing">Just the routing</a></div>
+    <div id="e-fields"></div>
+  </div>
+  <div class="actions">
+    <button id="e-del" class="danger">Delete</button>
+    <span class="grow"></span>
+    <button id="e-cancel">Cancel</button>
+    <button id="e-save" class="primary">Save</button>
+  </div>
+</section>
+
+<section id="settings-view" hidden>
+  <h3>Backup</h3>
+  <p>Everything lives in this browser. Export to keep a copy or move it to another machine; importing adds to what you have.</p>
+  <div class="actions" style="margin-top:0;padding-top:0">
+    <button id="export">Export</button>
+    <label class="btn">Import<input type="file" id="import" accept=".json,application/json" hidden></label>
+  </div>
+  <h3 style="margin-top:20px">Shortcut</h3>
+  <p>Open Snowball anywhere with <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (change it in your browser's extension shortcuts), or use the snowball button on ServiceNow ticket pages.</p>
+  <h3>Placeholders</h3>
+  <p><kbd>{first_name}</kbd> caller's first name · <kbd>{me}</kbd> your first name · <kbd>{any_field}</kbd> e.g. <kbd>{number}</kbd>, <kbd>{caller_id}</kbd></p>
+  <div class="actions"><span class="grow"></span><button id="s-back" class="primary">Done</button></div>
+</section>
+
+<footer class="keys"><kbd>↑</kbd><kbd>↓</kbd> pick · <kbd>⏎</kbd> use · <kbd>⇧⏎</kbd> new ticket · <kbd>esc</kbd> close</footer>
+<div id="toast" hidden role="status"><span></span><button>Undo</button></div>
+
+<script src="snow.js"></script>
+<script src="popup.js"></script>

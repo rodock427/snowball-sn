@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Snowball",
+  "version": "0.2.0",
+  "description": "Your ServiceNow sidekick: save replies, hand-offs and ticket templates, then fill, reply or start a ticket in one keystroke.",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["*://*.service-now.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Snowball",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png" }
+  },
+  "content_scripts": [{ "matches": ["*://*.service-now.com/*"], "js": ["content.js"], "all_frames": true }],
+  "web_accessible_resources": [{
+    "resources": ["popup.html", "popup.js", "snow.js", "icons/*"],
+    "matches": ["*://*.service-now.com/*"]
+  }],
+  "commands": { "_execute_action": { "suggested_key": { "default": "Alt+Shift+S" } } },
+  "browser_specific_settings": { "gecko": { "id": "snowball@local", "strict_min_version": "128.0" } }
+}
