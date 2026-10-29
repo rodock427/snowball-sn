@@ -24,7 +24,8 @@ const norm = t => t.values ? { name: t.name, table: t.table, emoji: '🧊',
 
 async function run(job, data = null) {
   const target = form ? { tabId: tab.id, frameIds: [form.frameId] } : { tabId: tab.id, allFrames: true };
-  const res = await chrome.scripting.executeScript({ target, world: 'MAIN', func: snowball, args: [job, data] });
+  // injectImmediately: don't wait for every frame to finish loading (ServiceNow keeps some busy)
+  const res = await chrome.scripting.executeScript({ target, world: 'MAIN', injectImmediately: true, func: snowball, args: [job, data] });
   run.frames = res.length; // shown when no form is found, to tell "can't reach the form frame" from "no form"
   return res.find(r => r.result);
 }
@@ -46,6 +47,9 @@ function toast(msg, undo, after) {
   t.classList.remove('pop'); void t.offsetWidth; t.classList.add('pop');
   toastTimer = setTimeout(() => { t.hidden = true; after?.(); }, undo ? 5000 : 2500);
 }
+// Say what broke instead of silently doing nothing.
+addEventListener('error', e => toast(`Oops: ${e.message}`));
+addEventListener('unhandledrejection', e => toast(`Oops: ${e.reason?.message || e.reason}`));
 
 const bounce = () => $('#logo').animate([{ transform: 'none' }, { transform: 'translateY(-7px) rotate(-10deg)' }, { transform: 'none' }], { duration: 450, easing: 'ease-out' });
 
@@ -238,9 +242,11 @@ $('#import').onchange = async e => {
   store.items = (store.items || store.templates || []).map(norm);
   delete store.templates;
   chrome.storage.local.remove('templates');
+  show('list'); // usable right away; the ticket header fills in once the page answers
   let why = '';
   try {
-    const hit = await run('peek');
+    const timeout = new Promise((_, no) => setTimeout(() => no(new Error('the page took too long to answer')), 3000));
+    const hit = await Promise.race([run('peek'), timeout]);
     if (hit) form = { frameId: hit.frameId, ...hit.result };
   } catch (e) { why = e.message; } // e.g. chrome:// pages, or no access to this site
   if (form) { store.origin = new URL(tab.url).origin; save(); }
@@ -248,5 +254,5 @@ $('#import').onchange = async e => {
   $('#ctx-sub').textContent = form ? form.short_description || form.table
     : why ? `Can't read this page: ${why}` : `No ticket here (checked ${run.frames} frames) — templates will start a new one`;
   $('#ctx-sub').title = $('#ctx-sub').textContent;
-  show('list');
+  render();
 })();
