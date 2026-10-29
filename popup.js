@@ -233,16 +233,19 @@ $('#import').onchange = async e => {
 
 (async () => {
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  store = await chrome.storage.local.get({ items: null, templates: [], picks: {}, origin: '' });
-  store.items = (store.items || store.templates).map(norm);
+  store = { picks: {}, origin: '', ...await chrome.storage.local.get(null) };
+  store.items = (store.items || store.templates || []).map(norm);
   delete store.templates;
   chrome.storage.local.remove('templates');
+  let why = '';
   try {
     const hit = await run('peek');
     if (hit) form = { frameId: hit.frameId, ...hit.result };
-  } catch {} // not a page we can script (e.g. chrome://)
+  } catch (e) { why = e.message; } // e.g. chrome:// pages, or no access to this site
   if (form) { store.origin = new URL(tab.url).origin; save(); }
   $('#ctx-title').textContent = form ? form.number || `New ${form.table}` : 'Snowball';
-  $('#ctx-sub').textContent = form ? form.short_description || form.table : 'No ticket here — templates will start a new one';
+  $('#ctx-sub').textContent = form ? form.short_description || form.table
+    : why ? `Can't read this page: ${why}` : 'No ticket here — templates will start a new one';
+  $('#ctx-sub').title = $('#ctx-sub').textContent;
   show('list');
 })();

@@ -1,7 +1,7 @@
 // snowball() runs inside the ServiceNow page via chrome.scripting, so it must stay self-contained.
 // job: 'peek' → ticket context, 'capture' → filled-in fields, 'apply' → fill fields / add a message.
 function snowball(job, data) {
-  if (typeof g_form === 'undefined') return null;
+  if (typeof g_form === 'undefined' || typeof g_form.getTableName !== 'function') return null;
   const table = g_form.getTableName();
   const ref = f => g_form.getDisplayBox?.(f)?.value; // display name of a reference field
   const shown = f => {
