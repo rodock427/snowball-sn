@@ -12,7 +12,7 @@ function snowball(job, data) {
   if (job === 'peek') return ctx;
 
   if (job === 'capture') {
-    const skip = /^(sys_|number$|opened_|closed_|resolved_|calendar_|business_|reassignment_count|reopen_count|activity_due|sla_due|comments|work_notes|approval_history)/;
+    const skip = /^(sys_|number$|opened_|closed_|resolved_|calendar_|business_duration|business_stc|reassignment_count|reopen_count|activity_due|sla_due|comments|work_notes|approval_history)/;
     const names = [...new Set((g_form.elements || []).map(e => e.fieldName))];
     const fields = names.filter(n => !skip.test(n) && !n.includes('.') && g_form.getValue(n)).map(name => ({
       name, label: g_form.getLabelOf?.(name) || name, value: g_form.getValue(name), display: shown(name),

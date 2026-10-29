@@ -1,7 +1,7 @@
 // node test.js — runs snow.js against a fake g_form.
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 
-const vals = { number: 'INC001', short_description: 'Printer down', caller_id: 'abc123', assignment_group: 'g1', priority: '', comments: '', sys_id: 'x' };
+const vals = { number: 'INC001', short_description: 'Printer down', caller_id: 'abc123', assignment_group: 'g1', priority: '', business_service: 's1', business_duration: '1h', comments: '', sys_id: 'x' };
 const names = { caller_id: 'Ada Lovelace', assignment_group: 'Network Ops' };
 const g_form = {
   elements: Object.keys(vals).map(fieldName => ({ fieldName })),
@@ -19,7 +19,7 @@ const json = x => JSON.parse(JSON.stringify(x));
 assert.deepEqual(json(ctx.snowball('peek')), { table: 'incident', number: 'INC001', short_description: 'Printer down' });
 
 const cap = json(ctx.snowball('capture'));
-assert.deepEqual(cap.fields.map(f => f.name), ['short_description', 'caller_id', 'assignment_group']);
+assert.deepEqual(cap.fields.map(f => f.name), ['short_description', 'caller_id', 'assignment_group', 'business_service']);
 assert.deepEqual(cap.fields[2], { name: 'assignment_group', label: 'assignment group', value: 'g1', display: 'Network Ops' });
 
 const res = json(ctx.snowball('apply', { fields: { assignment_group: { value: 'g2', display: 'Desktop' } }, message: 'Hi {first_name}, {me} here re {short_description}' }));
